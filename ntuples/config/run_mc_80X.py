@@ -212,7 +212,12 @@ process.TransientTrackBuilderESProducer = cms.ESProducer('TransientTrackBuilderE
 
 #NTuplizer
 process.lldjNtuple = cms.EDAnalyzer('lldjNtuple',
-
+  vertexFitterConfig = cms.PSet(
+        finder = cms.string('avf'),
+        sigmacut = cms.double(10.),
+        Tini = cms.double(256.),
+        ratio = cms.double(0.25),
+        ),
  electronSrc               = cms.InputTag('selectedElectrons','','LLDJ'),
  rhoLabel                  = cms.InputTag('fixedGridRhoFastjetAll'),
  eleVetoIdMap              = cms.InputTag('egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-veto'),

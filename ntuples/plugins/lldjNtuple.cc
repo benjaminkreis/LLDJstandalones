@@ -10,6 +10,8 @@ void setbit(UShort_t& x, UShort_t bit) {
 
 lldjNtuple::lldjNtuple(const edm::ParameterSet& ps) {
 
+  lldj_pset_ = ps;
+
   // electrons
   electronCollection_        = consumes<View<pat::Electron> >          (ps.getParameter<InputTag>("electronSrc"));
   rhoLabel_                  = consumes<double>                        (ps.getParameter<InputTag>("rhoLabel"));

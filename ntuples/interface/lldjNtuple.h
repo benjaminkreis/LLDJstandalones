@@ -61,6 +61,8 @@ class lldjNtuple : public edm::EDAnalyzer {
   //   virtual void beginJob() {};
   virtual void analyze(const edm::Event&, const edm::EventSetup&);
   //   virtual void endJob() {};
+
+  edm::ParameterSet lldj_pset_; 
   
   void branchesGlobalEvent(TTree*);
   void branchesMET        (TTree*);
@@ -121,6 +123,11 @@ class lldjNtuple : public edm::EDAnalyzer {
   edm::ESHandle<TransientTrackBuilder>             theBuilder_;
 
   void calculateAlphaMax(std::vector<reco::TransientTrack> tracks,std::vector<int>whichVertex, double& alphaMax, double& alphaMaxP, double& beta, double& alphaMax2, double& alphaMaxP2, double& beta2);
+
+  void deltaVertex3D(GlobalPoint secVert, std::vector<reco::TransientTrack> tracks, double& dEta, double& dPhi, double& pt, double& m, double& energy);
+  void deltaVertex2D(GlobalPoint secVert, std::vector<reco::TransientTrack> tracks, double& dPhi, double& pt, double& mediandPhi);
+  vector<reco::TransientTrack> cleanTracks(vector<reco::TransientTrack> tracks, GlobalPoint vertPos);
+
 
   void aod_jet_track_calculations(const edm::Event& e, const edm::EventSetup& es, //StateOnTrackerBound stateOnTracker,
 				  float jeteta, float jetphi,  std::vector<int> whichVertex_,
