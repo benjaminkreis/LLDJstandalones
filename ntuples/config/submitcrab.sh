@@ -3,17 +3,24 @@
 # do we submit or just generate submit scripts
 dosubmit=true
 doAOD=true
+dominiAOD=false
+domakeMiniAOD=false
 
 # start the timer
 START=$(date +%s);
 printf "Started at ${START}\n\n"
 
-if [ ${doAOD} = true ]
+if [ ${dominiAOD} = true ]
 then
- nversion="${nversion}AOD"
+ nversion="${nversion}MiniAOD"
+elif [ ${domakeMiniAOD} = true ]
+then
+ nversion="${nversion}MakeMiniAOD"
 fi
 
 printf "nversion is ${nversion} \n"
+printf "configured as \n"
+printf " doAOD=${doAOD}, dominiAOD=${dominiAOD}, domakeMiniAOD=${domakeMiniAOD}\n"
 
 # make the directory where we'll submit from
 thesubdir="${subdir}/gitignore/${nversion}"
@@ -23,29 +30,31 @@ printf "Making submit configurations in\n ${thesubdir}\n\n"
 # copy necessary files into submit directory
 if [ ${doAOD} = true ]
 then
- cp "${subdir}/run_data_80XAOD.py" ${thesubdir}
- cp "${subdir}/run_mc_80XAOD.py"   ${thesubdir}
- printf "process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) ) \n" >> "${thesubdir}/run_data_80XAOD.py" 
- printf "process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) ) \n" >> "${thesubdir}/run_mc_80XAOD.py"   
- printf "process.MessageLogger.cerr.FwkReport.reportEvery = 1000000 \n" >> "${thesubdir}/run_data_80XAOD.py" 
- printf "process.MessageLogger.cerr.FwkReport.reportEvery = 1000000 \n" >> "${thesubdir}/run_mc_80XAOD.py"   
- # get the DAS name mapping
+ dsubmitconfig="run_data_80XAOD.py"
+ msubmitconfig="run_mc_80XAOD.py"
+ thedasmap="${listdir}/ntuple/dasmapAOD.list"
+elif [ ${dominiAOD} = true ]
+then
+ dsubmitconfig="run_data_80X.py"
+ msubmitconfig="run_mc_80X.py"
+ thedasmap="${listdir}/ntuple/dasmap.list"
+elif [ ${domakeMiniAOD} = true ]
+then
+ dsubmitconfig="EXO-RunIISummer16MiniAODv2-DATA_cfg.py"
+ msubmitconfig="EXO-RunIISummer16MiniAODv2-MC_cfg.py"
  thedasmap="${listdir}/ntuple/dasmapAOD.list"
 else
- cp "${subdir}/run_data_80X.py" ${thesubdir}
- cp "${subdir}/run_mc_80X.py"   ${thesubdir}
- printf "process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) ) \n" >> "${thesubdir}/run_data_80X.py" 
- printf "process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) ) \n" >> "${thesubdir}/run_mc_80X.py"   
- printf "process.MessageLogger.cerr.FwkReport.reportEvery = 1000000 \n" >> "${thesubdir}/run_data_80X.py" 
- printf "process.MessageLogger.cerr.FwkReport.reportEvery = 1000000 \n" >> "${thesubdir}/run_mc_80X.py"   
- # get the DAS name mapping
- thedasmap="${listdir}/ntuple/dasmap.list"
+ printf "SOMETHING'S UP --- YOU HAVE doAOD=${doAOD}, dominiAOD=${dominiAOD}, domakeMiniAOD=${domakeMiniAOD}\n"
 fi
+
+# copy cmsRun configuration to submit directory
+cp "${subdir}/${dsubmitconfig}"  ${thesubdir}
+cp "${subdir}/${msubmitconfig}"  ${thesubdir}
 
 
 # sample names to run over
 samples=( \
-  "ZH_HToSSTobbbb_MS-55_ctauS-1"      \
+# put your samples here, copy from below
 )
 
 # Signal Samples
@@ -83,7 +92,6 @@ samples=( \
 #  "Data_SingleEle_D"     \
 #  "Data_SingleEle_C"     \
 #  "Data_SingleEle_B_2"   \
-#  "Data_SingleEle_B_1"   \
 
 #  "Data_SingleMu_H_3"    \
 #  "Data_SingleMu_H_2"    \
@@ -93,7 +101,24 @@ samples=( \
 #  "Data_SingleMu_D"      \
 #  "Data_SingleMu_C"      \
 #  "Data_SingleMu_B_2"    \
-#  "Data_SingleMu_B_1"    \
+
+#  "Data_DoubleMu_H_3"    \
+#  "Data_DoubleMu_H_2"    \
+#  "Data_DoubleMu_G"      \
+#  "Data_DoubleMu_F"      \
+#  "Data_DoubleMu_E"      \
+#  "Data_DoubleMu_D"      \
+#  "Data_DoubleMu_C"      \
+#  "Data_DoubleMu_B_2"    \
+
+#  "Data_DoubleEG_H_3"    \
+#  "Data_DoubleEG_H_2"    \
+#  "Data_DoubleEG_G"      \
+#  "Data_DoubleEG_F"      \
+#  "Data_DoubleEG_E"      \
+#  "Data_DoubleEG_D"      \
+#  "Data_DoubleEG_C"      \
+#  "Data_DoubleEG_B_2"    \
 
 #  "Data_SinglePhoton_H_3"    \
 #  "Data_SinglePhoton_H_2"    \
@@ -103,7 +128,6 @@ samples=( \
 #  "Data_SinglePhoton_D"      \
 #  "Data_SinglePhoton_C"      \
 #  "Data_SinglePhoton_B_2"    \
-#  "Data_SinglePhoton_B_1"    \
 
 # Main Backgrounds
 #  "DY50_1"               \
@@ -188,31 +212,60 @@ do
  submitname="submit_${samplename}"
  submitfile="${thesubdir}/${submitname}.py"
 
- # set veriables for submitting this specific sample
+ # set variables for submitting this specific sample
  WORKAREA="'crabsubmits_${nversion}'"
 
+ # check if running data or MC
  if [[ "${samplename:0:4}" == "Data" ]]
  then
+  dodata=true
+ else
+  dodata=false
+ fi
+ printf "dodata = ${dodata}\n"
+
+ # lumi mask
+ LUMIMASK=""
+ if [ ${dodata} = true ]
+ then
+     LUMIMASK="'${PWD}/jsons/Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt'"
+ fi
+
+ # choose correct config parameters
+ if [ ${dodata} = true ]
+ then 
   if [ ${doAOD} = true ]
   then
    # DATA AOD
-   CMSRUNCONFIG="'run_data_80XAOD.py'" 
-   UPERJOB="100"
-  else
+   CMSRUNCONFIG="'${dsubmitconfig}'" 
+   UPERJOB="50"
+  elif [ ${dominiAOD} = true ]
+  then
    # DATA miniAOD
-   CMSRUNCONFIG="'run_data_80X.py'" 
+   CMSRUNCONFIG="'${dsubmitconfig}'" 
+   UPERJOB="100"
+  elif [ ${domakeMiniAOD} = true ]
+  then
+   # DATA makeMiniAOD
+   CMSRUNCONFIG="'${dsubmitconfig}'" 
    UPERJOB="100"
   fi
   SPLITTING="'LumiBased'"
- else
+ else #if [ ${dodata} = true ]
   if [ ${doAOD} = true ]
   then
    # MC AOD
-   CMSRUNCONFIG="'run_mc_80XAOD.py'" 
-   UPERJOB="10"
-  else
+   CMSRUNCONFIG="'${msubmitconfig}'" 
+   UPERJOB="1"
+  elif [ ${dominiAOD} = true ]
+  then
    # MC miniAOD
-   CMSRUNCONFIG="'run_mc_80X.py'" 
+   CMSRUNCONFIG="'${msubmitconfig}'" 
+   UPERJOB="1"
+  elif [ ${domakeMiniAOD} = true ]
+  then
+   # MC makeMiniAOD
+   CMSRUNCONFIG="'${msubmitconfig}'" 
    UPERJOB="1"
   fi
   SPLITTING="'FileBased'"
@@ -223,7 +276,7 @@ do
  DATASET="'${datasetname}'"
  STORESITE="'T3_US_FNALLPC'"
  OUTLFNBASE="'/store/group/lpchbb/LLDJntuples/${nversion}'"
- MAXMEM="2000"
+ MAXMEM="4000"
 
  printf "WORKAREA      ${WORKAREA}     \n" 
  printf "CMSRUNCONFIG  ${CMSRUNCONFIG} \n" 
@@ -232,6 +285,7 @@ do
  printf "SPLITTING     ${SPLITTING}    \n" 
  printf "REQUESTNAME   ${REQUESTNAME}  \n" 
  printf "DATASET       ${DATASET}      \n" 
+ printf "LUMIMASK      ${LUMIMASK}     \n" 
  printf "STORESITE     ${STORESITE}    \n" 
  printf "OUTLFNBASE    ${OUTLFNBASE}   \n" 
  printf "MAXMEM        ${MAXMEM}       \n" 
@@ -245,9 +299,16 @@ do
  sed -i "s@SPLITTING@${SPLITTING}@g"       "${submitfile}" 
  sed -i "s@REQUESTNAME@${REQUESTNAME}@g"   "${submitfile}" 
  sed -i "s@DATASET@${DATASET}@g"           "${submitfile}" 
+ sed -i "s@LUMIMASK@${LUMIMASK}@g"         "${submitfile}" 
  sed -i "s@STORESITE@${STORESITE}@g"       "${submitfile}" 
  sed -i "s@OUTLFNBASE@${OUTLFNBASE}@g"     "${submitfile}" 
  sed -i "s@MAXMEM@${MAXMEM}@g"             "${submitfile}" 
+
+ # remove lumi mask for mc
+ if [ ${dodata} = false ]
+ then
+     sed -i "/config.Data.lumiMask/d" "${submitfile}"
+ fi
 
  # submit the jobs
  if [ ${dosubmit} = true ]

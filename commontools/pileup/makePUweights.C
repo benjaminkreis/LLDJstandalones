@@ -1,16 +1,20 @@
 
 #include <stdlib.h>  
 
-void makePUweights()
+void makePUweights(TString Tsample)
 {
+
+ char* cinpath;
+ cinpath = getenv ("CMSSW_BASE");
+ TString tinpath = (TString)cinpath;
+ tinpath.Append("/src/LLDJstandalones/commontools/pileup/");
 
  // set up names
  TString inname_mc = "mix_2016_25ns_Moriond17MC_PoissonOOTPU.txt";
- TString inname_data66017 = "puDistData_66017_24jan2017.root";
- TString inname_data69200 = "puDistData_69200_24jan2017.root";
- TString inname_data72383 = "puDistData_72383_24jan2017.root";
- TString inpath = "/home/rhombus/CMS/LLDJ/LLDJstandalones/commontools/pileup/data/" ;
- TString oname_base = "puWeights_69200_24jan2017" ;
+ TString inname_data66017 = "PU_"+Tsample+"_66017.root";
+ TString inname_data69200 = "PU_"+Tsample+"_69200.root";
+ TString inname_data72383 = "PU_"+Tsample+"_72383.root";
+ TString oname_base = "puWeights_"+Tsample+"_69200" ;
 
  TFile* file_data66017 ;
  TFile* file_data69200 ;
@@ -26,7 +30,7 @@ void makePUweights()
  TH1F* h_PUweight_Down  ;
 
  // make mc histogram from txt file
- std::fstream infile_mc(inpath+inname_mc, std::ios_base::in);
+ std::fstream infile_mc(tinpath+inname_mc, std::ios_base::in);
 
  // first fill values into a vector
  std::vector<float> mc_values;
@@ -53,9 +57,9 @@ void makePUweights()
  
 
  // load data histogram files
- file_data66017 = new TFile( inpath + inname_data66017 ) ;
- file_data69200 = new TFile( inpath + inname_data69200 ) ;
- file_data72383 = new TFile( inpath + inname_data72383 ) ;
+ file_data66017 = new TFile( tinpath + inname_data66017 ) ;
+ file_data69200 = new TFile( tinpath + inname_data69200 ) ;
+ file_data72383 = new TFile( tinpath + inname_data72383 ) ;
 
  // load data histograms
  h_data66017 = (TH1F*)file_data66017 -> Get("pileup")->Clone("h_data66017") ; 
@@ -160,7 +164,7 @@ void makePUweights()
  gPad->RedrawAxis();
 
  // save canvas
- canvas->SaveAs(inpath + oname_base+"_inputs.pdf");
+ canvas->SaveAs(tinpath + oname_base+"_inputs.pdf");
 
  // now plot ratios
 
@@ -191,9 +195,9 @@ void makePUweights()
  gPad->RedrawAxis();
 
  // save canvas
- canvas->SaveAs(inpath + oname_base+"_weights.pdf");
+ canvas->SaveAs(tinpath + oname_base+"_weights.pdf");
 
- TFile *outfile = new TFile(inpath + oname_base + ".root","RECREATE");
+ TFile *outfile = new TFile(tinpath + oname_base + ".root","RECREATE");
 
  h_data66017    -> SetLineColor(kBlack); 
  h_data69200    -> SetLineColor(kBlack); 

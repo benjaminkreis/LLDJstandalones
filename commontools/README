@@ -1,0 +1,12 @@
+
+# To make lists of files
+ bash makemasterlist.sh   # 
+ bash makelists.sh        # 
+ bash countevents.sh      # 
+ bash findTTavgweights.sh # TTbar only
+
+# After analyzer has been run on condor
+ bash checkjobs.sh # see if they're done
+ bash haddjobs.sh  # merge the output locally
+ bash cpeos.sh     # copy to EOS
+

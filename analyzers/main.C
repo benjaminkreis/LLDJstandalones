@@ -2,7 +2,7 @@
 #include <fstream>
 #include <unistd.h>
 
-#include "analyzer_signal.h"
+#include "analyzer_loop.h"
 #include "TROOT.h"
 #include <TChain.h>
 #include <TString.h>
@@ -10,7 +10,7 @@
  
 #include <vector>
 #include <map>
- 
+
 int main(int argc, char **argv){
 
  // start stopwatch
@@ -91,32 +91,32 @@ int main(int argc, char **argv){
    }
 
  for (index = optind; index < argc; index++)
-   printf ("Non-option argument %s\n", argv[index]);
+   std::cout << "Non-option argument " << argv[index] << std::endl;
 
- printf ("Running sample:   %s\n", sample);
+ std::cout << "Running sample: " << sample << std::endl;
 
  // easiest if we convert char to TString
  TString Tsample  = TString(sample);
  TString Txname   = TString(sxname);
  TString TSlumi   = TString(slumi);
- Double_t lumi    = TSlumi.Atof();
+ Float_t lumi     = TSlumi.Atof();
  TString TSevts   = TString(sevts);
- Int_t TIevts     = TSevts.Atoi();
- TString Tinpath   = TString(inpath);  
- TString Toutpath  = TString(outpath); 
- TString TSatfile  = TString(atfile);  
- TString TSnfiles  = TString(nfiles);
- Int_t TIatfile = TSatfile.Atoi();
- Int_t TInfiles = TSnfiles.Atoi();
+ Int_t   TIevts   = TSevts.Atoi();
+ TString Tinpath  = TString(inpath);  
+ TString Toutpath = TString(outpath); 
+ TString TSatfile = TString(atfile);  
+ TString TSnfiles = TString(nfiles);
+ Int_t   TIatfile = TSatfile.Atoi();
+ Int_t   TInfiles = TSnfiles.Atoi();
  // MC vs Data
  Bool_t isMC=bisMC;
 
- printf("Tsample:  %s\n",Tsample.Data());
- printf("Txname:   %s\n",Txname.Data());
- printf("TSlumi:   %s\n",TSlumi.Data());
- printf("TSevts:   %s\n",TSevts.Data());
- printf("TIatfile: %i\n",TIatfile);
- printf("TInfiles: %i\n",TInfiles);
+ std::cout << "Tsample: " << Tsample << std::endl;
+ std::cout << "Txname: " << Txname << std::endl;
+ std::cout << "TSlumi: " << TSlumi << std::endl;
+ std::cout << "TSevts: " << TSevts << std::endl;
+ std::cout << "TIatfile: " << TIatfile << std::endl;
+ std::cout << "TInfiles: " << TInfiles << std::endl;
 
  Bool_t makelog=kFALSE;
 
@@ -127,8 +127,8 @@ int main(int argc, char **argv){
  TChain *theChain = new TChain("lldjNtuple/EventTree");
  theChain->Reset();
 
- printf("Input List Name:  %s\n", inputListName.Data()) ; 
- printf("Output File Name: %s.root\n", outfilename.Data()  ) ; 
+ std::cout << "Input List Name: " << inputListName << std::endl;
+ std::cout << "Output File Name: " << outfilename << std::endl;
 
  // lines read from file variables
  std::string inputline = "";
@@ -157,27 +157,27 @@ int main(int argc, char **argv){
 
   // TChain needs a TString..
   Tinputline = inputline;
-  printf("raw inputline: %s\n",Tinputline.Data());
+  std::cout << "raw inputline: " << Tinputline << std::endl;
 
   // read input file names
   if( Tinputline.Contains("/home/rhombus") ){
    theChain->Add( Tinputline );
-   printf(" Inputfile: %s\n",Tinputline.Data());
+   std::cout << " Inputfile: " << Tinputline << std::endl;
   }
 
   if( Tinputline.Contains("/uscms/home") ){
    theChain->Add( Tinputline );
-   printf(" Inputfile: %s\n",Tinputline.Data());
+   std::cout << " Inputfile: " << Tinputline << std::endl;
   }
 
   if( Tinputline.Contains("/uscms_data/d3/tmperry") ){
    theChain->Add( Tinputline );
-   printf(" Inputfile: %s\n",Tinputline.Data());
+   std::cout << " Inputfile: " << Tinputline << std::endl;
   }
 
   if( Tinputline.Contains("/store/group") ){
-       theChain->Add( "root://cmseos.fnal.gov/"+Tinputline );
-   printf(" Inputfile: %s\n",Tinputline.Data());
+   theChain->Add( "root://cmsxrootd.fnal.gov/"+Tinputline );
+   std::cout << " Inputfile: " << Tinputline << std::endl;
   }
 
   // if( dolocal ){
@@ -190,8 +190,9 @@ int main(int argc, char **argv){
  inputfile.close();
 
  // sample-dependent input variables 
- Double_t nrevents     ;
- Double_t crosssection ;
+ Float_t nrevents     ;
+ Float_t crosssection ;
+ Float_t avgTTSF = 1.    ;
 
  // ---- Get sample information 
  // open <samplename>.info
@@ -211,37 +212,86 @@ int main(int argc, char **argv){
   if( Tinputline.Contains("crosssection: ") ){  
    Tinputline.ReplaceAll("crosssection: ","");
    crosssection = Tinputline.Atof();
-   printf("  crosssection: %f\n",crosssection);
+   std::cout << "  crosssection: " << crosssection << std::endl;
   }
 
   // read nr events
   if( Tinputline.Contains("nrevents: ") ){  
    Tinputline.ReplaceAll("nrevents: ","");
    nrevents = Tinputline.Atof();
-   printf("  nrevents: %f\n",nrevents);
+   std::cout << "  nrevents: " << nrevents << std::endl;
+  }
+
+  // read tt avg SF
+  if( Tinputline.Contains("ttsf: ") ){  
+   Tinputline.ReplaceAll("ttsf: ","");
+   avgTTSF = Tinputline.Atof();
+   std::cout << "  avgTTSF: " << avgTTSF << std::endl;
   }
   inputline_dump.push_back(inputline);
  } //while !inputfile.eof()
 
- printf("  lumi: %f\n\n",lumi);
+ std::cout << "  lumi: " << lumi << std::endl;
 
- //TFile* optfile = new TFile(outfilename+"_OPT.root", "RECREATE");
+ std::vector<TString> unccategories;
+ unccategories.push_back("");
+if( isMC ){
+  unccategories.push_back("_EGSUp");
+  unccategories.push_back("_EGSDown");
+  unccategories.push_back("_MESUp");
+  unccategories.push_back("_MESDown");
+  //unccategories.push_back("_JESUp");
+  //unccategories.push_back("_JESDown");
+  unccategories.push_back("_AMaxUp");
+  unccategories.push_back("_AMaxDown");
+  unccategories.push_back("_IPSigUp");
+  unccategories.push_back("_IPSigDown");
+  unccategories.push_back("_TAUp");
+  unccategories.push_back("_TADown");
+  unccategories.push_back("_TagVarsUp");
+  unccategories.push_back("_TagVarsDown");
+ }
+ 
  // make the analyzer, init some stuff
- analyzer_signal analyzer;
+ analyzer_loop analyzer;
  analyzer.Init(theChain, isMC, makelog);
- analyzer.initSelectionCategories();
- analyzer.initBasicHistograms();
- analyzer.initAODCaloJetHistograms();
- analyzer.initSlimmedJetHistograms();
- analyzer.init2DHistograms();
+ analyzer.setConfiguration();
 
- analyzer.Loop(outfilename, lumi, nrevents, crosssection, TIevts); //, optfile);
+ // file to be filled with slimmed tree
+ // must be created before TTree, put here to get name aligned
+ TFile* optfile = new TFile(outfilename+"_OPTtree.root", "RECREATE");
+ TFile* NM1file = new TFile(outfilename+"_NM1tree.root", "RECREATE");
+
+ TString outfilenamebase = outfilename;
+ for(unsigned int i=0; i<unccategories.size(); ++i){
+  TString unccategory = unccategories.at(i);
+  //outfilename = outfilenamebase + unccategory;
+
+  analyzer.initSelectionCategories( );
+  analyzer.initEleHistograms( unccategory );
+  analyzer.initMuHistograms( unccategory );
+  analyzer.initLepHistograms( unccategory );
+  analyzer.initPhoHistograms( unccategory );
+  analyzer.initMETHTHistograms( unccategory );
+  analyzer.initTTOCHistograms( unccategory );
+  //analyzer.initExtraHistograms( unccategory );
+  analyzer.initAODCaloJetBasicHistograms( unccategory );
+  analyzer.initAODCaloJetExtraHistograms( unccategory ); 
+  analyzer.initAODCaloJetTagHistograms( unccategory ); 
+  analyzer.initAODCaloJetTagMultHistograms( unccategory );
+  analyzer.initAODCaloJetMultHistograms( unccategory );
+  analyzer.initCutflowHistograms( unccategory );
+  analyzer.init2DHistograms( unccategory );
+  analyzer.initBackgroundEstimateHistograms();	
+
+  analyzer.Loop(outfilename, lumi, nrevents, crosssection, avgTTSF, TIevts, optfile, NM1file, unccategory);
+ }
 
  // end stopwatch
  sw.Stop();
- printf("Real Time: %0.3f minutes\n",sw.RealTime()/60.0);
- printf("CPU Time: %0.3f minutes\n",sw.CpuTime()/60.0);
- printf("Done with %s\n\n\n",Tsample.Data());
+ std::cout << "Real Time: " << sw.RealTime()/60.0 << std::endl;
+ std::cout << "CPU Time: " << sw.CpuTime()/60.0 << std::endl;
+ std::cout << "Done with " << Tsample << std::endl;
 
  return 0;
 }

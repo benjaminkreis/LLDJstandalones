@@ -1,31 +1,20 @@
 #!/bin/bash
 
-# straight ls is too big
-# ls  /hdfs/store/user/tmperry/rainday/*/*/*/*/*root > ./allfiles.list
-
 # define output directory where lists will end up
 outdir="${CMSSW_BASE}/src/LLDJstandalones/lists"
 
-# make outlist of directories
-#ls -d /hdfs/store/user/tmperry/sosou/*/ > ${outdir}/dirout.list
-#eosls -d root://cmseos.fnal.gov//store/group/lpchbb/LLDJntuples/furwed/* > ${outdir}/dirout.list
-#eos root://cmseos.fnal.gov ls -d /store/user/lpchbb/LLDJntuples/furwed/*/ > ${outdir}/dirout.list
-
-filetype="" # miniAOD=""
-#filetype="AOD" # miniAOD=""
-
-#xrdfs root://cmseos.fnal.gov ls /eos/uscms/store/user/lpchbb/LLDJntuples/furwed/ > ${outdir}/dirout.list
-#tempbase = ${CMSSW_BASE}/src/commontools
-xrdfs root://cmseos.fnal.gov ls ${depot}/${nversion}${filetype} > templayer1.out #${outdir}/dirout.list
+# read first layer of storage directory save output to temp file
+xrdfs root://cmseos.fnal.gov ls ${depot}/${nversion} > templayer1.out
 
 # initialize outfile as empty (overwrite if exists)
-echo "" > ${outdir}/allfiles${filetype}.masterlist
+echo "" > ${outdir}/allfiles.masterlist
 
+# read subsequent layers into temp files until arrive at root file
 for lineone in $(cat templayer1.out);
 do
  
  xrdfs root://cmseos.fnal.gov ls ${lineone} > templayer2.out  
- echo "Text read from file: ${depot}/${nversion}${filetype}/${lineone}"
+ echo "Text read from file: ${lineone}"
  for linetwo in $(cat templayer2.out)
  do
  
@@ -37,14 +26,17 @@ do
    for linefour in $(cat templayer4.out)
    do 
    
-   xrdfs root://cmseos.fnal.gov ls ${linefour} >> ${outdir}/allfiles${filetype}.masterlist 
+   xrdfs root://cmseos.fnal.gov ls ${linefour} >> ${outdir}/allfiles.masterlist 
    done
   done
  done
 done
 
+#remove bad entries from masterlist
+sed -i '/log/d' ${outdir}/allfiles.masterlist
+sed -i '/failed/d' ${outdir}/allfiles.masterlist
+#save master list and remove junk files
 mv templayer1.out ${outdir}/dir.out
 rm templayer2.out
 rm templayer3.out
 rm templayer4.out
-

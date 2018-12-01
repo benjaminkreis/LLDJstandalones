@@ -2,22 +2,7 @@
 
 # delete anything in our "list" that doesn't have .root at the end
 
-for sample in \
- "${listdir}/DY50.list" \
- "${listdir}/DY5to50.list" \
- "${listdir}/TTbar.list" \
- "${listdir}/STs.list" \
- "${listdir}/STtbar.list" \
- "${listdir}/STt.list" \
- "${listdir}/STtbarW.list" \
- "${listdir}/STtW.list" \
- "${listdir}/WJets.list" \
- "${listdir}/ZHtoLLbb.list" \
- "${listdir}/WW.list" \
- "${listdir}/ZZ.list" \
- "${listdir}/WZ.list" \
- $(ls ${listdir}/Signal*list)
-
+for sample in $(ls ${listdir}/*.list)
 
 do
 

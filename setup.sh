@@ -1,8 +1,12 @@
 #!/bin/bash
 
-export depot="/eos/uscms/store/group/lpchbb/LLDJntuples/"
-export nversion="furwed"
-export aversion="t3dy_cutflowDY_loose"
+export depot="/eos/uscms/store/group/lpchbb/LLDJntuples"
+export depot2="/store/group/lpchbb/LLDJntuples"
+export nversion="topRWT"
+export aversion="mrtusDYsh"
+#export aversion="mrtusOPsh"
+#export aversion="mrtusEMsh"
+#export aversion="mrtusOrig"
 
 pushd `dirname ${BASH_SOURCE[0]}` > /dev/null
 export basedir=`pwd`

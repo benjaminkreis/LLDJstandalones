@@ -1,0 +1,14 @@
+
+# Copy the JSON for processedLumis.json for the datasets
+ ## makes DoubleEG.json, etc
+ ## if submitted from FNAL, needs to come from FNAL
+bash collectjsons.sh
+
+# make PU histograms from jsons 
+ ## makes PU_DoubleEG_69200.root, etc
+ ## needs to be run from lxplus to find
+ ## --inputLumiJSON /afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/13TeV/PileUp/pileup_latest.txt
+makeinputhistos.sh
+
+# make weight histograms comparing MC to data
+bash runMakePUweights.sh

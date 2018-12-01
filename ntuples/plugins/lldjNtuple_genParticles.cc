@@ -5,34 +5,36 @@ using namespace std;
 
 
 //Variables for branches
-vector<int> llpId;
-vector<int> llpStatus;
+vector<int>   llpId;
+vector<int>   llpStatus;
 vector<float> llpPt;
 vector<float> llpEta;
 vector<float> llpPhi;
 vector<float> llpMass;
-vector<int> llpDaughterId;
-vector<int> llpDaughterStatus;
+vector<int>   llpDaughterId;
+vector<int>   llpDaughterStatus;
 vector<float> llpDaughterPt;
 vector<float> llpDaughterEta;
 vector<float> llpDaughterPhi;
 vector<float> llpDaughterMass;
+vector<float> toppts;
 
 
 void lldjNtuple::branchesGenPart(TTree* tree) {
 
-  tree->Branch("llpId",           &llpId);
-  tree->Branch("llpStatus",           &llpStatus);
-  tree->Branch("llpPt",           &llpPt);
-  tree->Branch("llpEta",          &llpEta);
-  tree->Branch("llpPhi",          &llpPhi);
-  tree->Branch("llpMass",         &llpMass);
-  tree->Branch("llpDaughterId",   &llpDaughterId);
-  tree->Branch("llpDaughterStatus",   &llpDaughterStatus);
-  tree->Branch("llpDaughterPt",   &llpDaughterPt);
-  tree->Branch("llpDaughterEta",  &llpDaughterEta);
-  tree->Branch("llpDaughterPhi",  &llpDaughterPhi);
-  tree->Branch("llpDaughterMass", &llpDaughterMass);
+  tree->Branch("llpId",             &llpId);
+  tree->Branch("llpStatus",         &llpStatus);
+  tree->Branch("llpPt",             &llpPt);
+  tree->Branch("llpEta",            &llpEta);
+  tree->Branch("llpPhi",            &llpPhi);
+  tree->Branch("llpMass",           &llpMass);
+  tree->Branch("llpDaughterId",     &llpDaughterId);
+  tree->Branch("llpDaughterStatus", &llpDaughterStatus);
+  tree->Branch("llpDaughterPt",     &llpDaughterPt);
+  tree->Branch("llpDaughterEta",    &llpDaughterEta);
+  tree->Branch("llpDaughterPhi",    &llpDaughterPhi);
+  tree->Branch("llpDaughterMass",   &llpDaughterMass);
+  tree->Branch("toppts",            &toppts);
 
 }
 
@@ -51,6 +53,7 @@ void lldjNtuple::fillGenPart(const edm::Event& e) {
   llpDaughterEta.clear();
   llpDaughterPhi.clear();
   llpDaughterMass.clear();
+  toppts.clear();
 
   //Gen particles handle
   edm::Handle<vector<reco::GenParticle> > genParticlesHandle;
@@ -63,6 +66,10 @@ void lldjNtuple::fillGenPart(const edm::Event& e) {
 							ip-genParticlesHandle->begin());
     genpartparentage::GenParticleParentage particleHistory(partRef);
     
+    //Save top particles
+    if( abs(ip->pdgId()) == 6 && ip->isLastCopy() ){
+     toppts.push_back( ip->pt() );
+    }
 
     //Save long lived BSM particles
     if( abs(ip->pdgId()) == 9000006 ){
@@ -88,5 +95,11 @@ void lldjNtuple::fillGenPart(const edm::Event& e) {
     }
 
   }//end gen loop
+  float TTSF = 1.;
+  if(toppts.size() == 2){
+   TTSF = TTSF * exp( 0.0615 - 0.0005*toppts.at(0)) * exp( 0.0615 - 0.0005*toppts.at(1));
+  }
+  hTTSF_->Fill( TTSF );
+  //std::cout<<"TTSF   "<<TTSF<<std::endl;
 
 }

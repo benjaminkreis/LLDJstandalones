@@ -41,17 +41,18 @@
 #include "RecoVertex/VertexPrimitives/interface/ConvertToFromReco.h"
 #include "RecoVertex/VertexPrimitives/interface/ConvertError.h"
 
+#include "DataFormats/PatCandidates/interface/Jet.h"
+
+
 
 using namespace std;
 typedef ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<double> > LorentzVector;
 
 // AOD Collection Handles
-//edm::Handle<double>                 rhoHandle;
-//edm::Handle<reco::VertexCollection> vtxHandle;
-
 edm::Handle<edm::View<reco::CaloJet> >  AODak4CaloJetsHandle;   
 edm::Handle<edm::View<reco::PFJet>   >  AODak4PFJetsHandle;     
 edm::Handle<edm::View<reco::PFJet>   >  AODak4PFJetsCHSHandle;  
+edm::Handle<edm::View<pat::Jet>      >  selectedPatJetsHandle;  
 edm::Handle<edm::View<reco::Vertex>  >  AODVertexHandle;
 edm::Handle<edm::View<reco::Track>   >  AODTrackHandle;
 edm::Handle<reco::BeamSpot> beamspotHandle_;
@@ -66,7 +67,6 @@ VertexDistanceXY vertexDistanceXY_;
 VertexCompatibleWithBeam* vertexBeam_ = new VertexCompatibleWithBeam(vertexDistanceXY_,100);
 
 // AOD ---------------------------------------------
-// AOD variables
 // Calo Jets
 Int_t          AODnCaloJet_;
 vector<float>  AODCaloJetPt_;
@@ -108,6 +108,7 @@ vector<float>  AODCaloJetAvfBeamSpotDeltaPhi_;
 vector<float>  AODCaloJetAvfBeamSpotRecoilPt_;
 vector<float>  AODCaloJetAvfBeamSpotMedianDeltaPhi_;
 vector<float>  AODCaloJetAvfBeamSpotLog10MedianDeltaPhi_;
+vector<int>    AODCaloJetNMatchedTracks_;
 vector<int>    AODCaloJetNCleanMatchedTracks_;
 vector<int>    AODCaloJetSumHitsInFrontOfVert_;
 vector<int>    AODCaloJetSumMissHitsAfterVert_;
@@ -116,6 +117,15 @@ vector<int>    AODCaloJetMissHitsAfterVertPerTrack_;
 vector<float>  AODCaloJetAvfDistToPV_;
 vector<float>  AODCaloJetAvfVertexDeltaZtoPV_;
 vector<float>  AODCaloJetAvfVertexDeltaZtoPV2_;
+
+// PAT Jets
+Int_t          AODnPATJet_;
+vector<int>    AODPATJetPartonFlavour_;
+vector<float>  AODPATJetPt_;
+vector<float>  AODPATJetEta_;
+vector<float>  AODPATJetPhi_;
+vector<float>  AODPATJetCSV_;
+vector<float>  AODPATJetMVA_;
 
 // PF Jets
 Int_t          AODnPFJet_;
@@ -227,6 +237,7 @@ void lldjNtuple::branchesAODJets(TTree* tree) {
   tree->Branch("AODCaloJetAvfBeamSpotMedianDeltaPhi", &AODCaloJetAvfBeamSpotMedianDeltaPhi_);
   tree->Branch("AODCaloJetAvfBeamSpotLog10MedianDeltaPhi", &AODCaloJetAvfBeamSpotLog10MedianDeltaPhi_);
   tree->Branch("AODCaloJetNCleanMatchedTracks", &AODCaloJetNCleanMatchedTracks_);
+  tree->Branch("AODCaloJetNMatchedTracks"      , &AODCaloJetNMatchedTracks_);
   tree->Branch("AODCaloJetSumHitsInFrontOfVert", &AODCaloJetSumHitsInFrontOfVert_);
   tree->Branch("AODCaloJetSumMissHitsAfterVert", &AODCaloJetSumMissHitsAfterVert_);
   tree->Branch("AODCaloJetHitsInFrontOfVertPerTrack", &AODCaloJetHitsInFrontOfVertPerTrack_);
@@ -234,6 +245,14 @@ void lldjNtuple::branchesAODJets(TTree* tree) {
   tree->Branch("AODCaloJetAvfDistToPV", &AODCaloJetAvfDistToPV_);
   tree->Branch("AODCaloJetAvfVertexDeltaZtoPV", &AODCaloJetAvfVertexDeltaZtoPV_);
   tree->Branch("AODCaloJetAvfVertexDeltaZtoPV2", &AODCaloJetAvfVertexDeltaZtoPV2_);
+
+  tree->Branch("AODnPATJet",              &AODnPATJet_);
+  tree->Branch("AODPATJetPartonFlavour",  &AODPATJetPartonFlavour_);
+  tree->Branch("AODPATJetPt",             &AODPATJetPt_);
+  tree->Branch("AODPATJetEta",            &AODPATJetEta_);
+  tree->Branch("AODPATJetPhi",            &AODPATJetPhi_);
+  tree->Branch("AODPATJetCSV",            &AODPATJetCSV_);
+  tree->Branch("AODPATJetMVA",            &AODPATJetMVA_);
                           
   // PF Jets
   tree->Branch("AODnPFJet"                        , &AODnPFJet_);                                 
@@ -256,7 +275,7 @@ void lldjNtuple::branchesAODJets(TTree* tree) {
   tree->Branch("AODPFJetMedianLog10TrackAngle"    , &AODPFJetMedianLog10TrackAngle_);                           
   tree->Branch("AODPFJetTotalTrackAngle"          , &AODPFJetTotalTrackAngle_);
   
-  // PFcms Jets 
+  // PFchs Jets 
   tree->Branch("AODnPFchsJet"                     , &AODnPFchsJet_);                                  
   tree->Branch("AODPFchsJetID"                    , &AODPFchsJetID_);                                  
   tree->Branch("AODPFchsJetPt"                    , &AODPFchsJetPt_);                                  
@@ -289,6 +308,8 @@ void lldjNtuple::fillAODJets(const edm::Event& e, const edm::EventSetup& es) {
  AODCaloJetPt_.clear();
  AODCaloJetEta_.clear();
  AODCaloJetPhi_.clear();
+ //AODnTracksToCaloJet_.clear();
+ AODCaloJetNMatchedTracks_.clear();
 
  AODCaloJetAlphaMax_.clear();                               
  AODCaloJetAlphaMax2_.clear();                               
@@ -332,6 +353,15 @@ void lldjNtuple::fillAODJets(const edm::Event& e, const edm::EventSetup& es) {
  AODCaloJetAvfDistToPV_.clear();
  AODCaloJetAvfVertexDeltaZtoPV_.clear();
  AODCaloJetAvfVertexDeltaZtoPV2_.clear();
+
+ // PAT Jets
+ AODnPATJet_ = 0;
+ AODPATJetPartonFlavour_.clear();
+ AODPATJetPt_.clear();
+ AODPATJetEta_.clear();
+ AODPATJetPhi_.clear();
+ AODPATJetCSV_.clear();
+ AODPATJetMVA_.clear();
 
  // PF Jets
  AODnPFJet_=0;
@@ -404,6 +434,7 @@ void lldjNtuple::fillAODJets(const edm::Event& e, const edm::EventSetup& es) {
  e.getByToken( AODak4CaloJetsLabel_ ,  AODak4CaloJetsHandle  );   
  e.getByToken( AODak4PFJetsLabel_   ,  AODak4PFJetsHandle    );     
  e.getByToken( AODak4PFJetsCHSLabel_,  AODak4PFJetsCHSHandle );  
+ e.getByToken( selectedPatJetsLabel_,  selectedPatJetsHandle );  
  e.getByToken( AODVertexLabel_      ,  AODVertexHandle );
  e.getByToken( AODTrackLabel_       ,  AODTrackHandle );
 
@@ -584,6 +615,8 @@ void lldjNtuple::fillAODJets(const edm::Event& e, const edm::EventSetup& es) {
   // index of a track passing deltaR requirement to this jet
   // out of the master track record of tracks passing basic selections
   vector<int>   caloJetTrackIDs = getJetTrackIndexs( jeteta, jetphi );
+  AODCaloJetNMatchedTracks_.push_back( caloJetTrackIDs.size() );
+
   if(caloJetTrackIDs.size()<1) continue;
 
   if(verbose_AOD){
@@ -661,11 +694,44 @@ void lldjNtuple::fillAODJets(const edm::Event& e, const edm::EventSetup& es) {
 
  }
 
+
+ // PAT jets for heavy flavor studies (ak4 pf chs)
+ for (edm::View<pat::Jet>::const_iterator iJet = selectedPatJetsHandle->begin(); iJet != selectedPatJetsHandle->end(); ++iJet) {
+
+   if(iJet->pt()<15.0 || fabs(iJet->eta())>3) continue; 
+   
+   AODnPATJet_++;
+   AODPATJetPt_.push_back(iJet->pt());
+   AODPATJetEta_.push_back(iJet->eta());
+   AODPATJetPhi_.push_back(iJet->phi());
+   AODPATJetPartonFlavour_.push_back(iJet->partonFlavour()); 
+   AODPATJetCSV_.push_back(iJet->bDiscriminator("pfCombinedSecondaryVertexV2BJetTags"));
+   AODPATJetMVA_.push_back(iJet->bDiscriminator("pfCombinedMVAV2BJetTags"));
+ }
+  
+	
  // AOD PF Jets -------------------------------------------
  for (edm::View<reco::PFJet>::const_iterator iJet = AODak4PFJetsHandle->begin(); iJet != AODak4PFJetsHandle->end(); ++iJet) {
+	 
+// Remove code casting reco jet as PAT jet, because these will not have btag or partonFlavour
+//
+// if TagInfo present
+//  if( patJet.hasTagInfo("pfInclusiveSecondaryVertexFinder") ) // need to omit 'TagInfos' from the label since PAT strips it away
+//  {
+//     std::cout<<" PF jet has Tag info"<<std::endl;
+//    //const reco::CandSecondaryVertexTagInfo *candSVTagInfo = jet->tagInfoCandSecondaryVertex("pfInclusiveSecondaryVertexFinder");
+//    //// if there is at least one reconstructed SV
+//    //if( candSVTagInfo->nVertices() >= 1 ) 
+//    //{
+//    //  std::cout << "Found secondary vertex with a flight distance of " << candSVTagInfo->flightDistance(0).value() << " cm" << std::endl;
+//    //}
+//  }
 
   if(verbose_AOD) printf("PF %f \n",iJet->pt());
   
+  //test btagging
+  //std::cout << "partonFlavour " << iJet->partonFlavour() << std::endl;
+
   float jetpt  = iJet->pt();
   float jeteta = iJet->eta();
   float jetphi = iJet->phi();

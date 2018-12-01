@@ -24,6 +24,9 @@ vector<float>    AOD_eleEn_;
 vector<float>    AOD_eleEta_;
 vector<float>    AOD_elePhi_;
 
+vector<float>    AOD_eled0_;
+vector<float>    AOD_eledz_;
+
 vector<int>      AOD_eleCharge_;
 vector<int>      AOD_eleChargeConsistent_;
 
@@ -48,6 +51,9 @@ void lldjNtuple::branchesAODElectrons(TTree* tree) {
  tree->Branch("AOD_eleEta",                   &AOD_eleEta_                   );     
  tree->Branch("AOD_elePhi",                   &AOD_elePhi_                   );     
 
+ tree->Branch("AOD_eled0",                   &AOD_eled0_                   );     
+ tree->Branch("AOD_eledz",                   &AOD_eledz_                   );     
+
  tree->Branch("AOD_eleCharge",                &AOD_eleCharge_                );     
  tree->Branch("AOD_eleChargeConsistent",      &AOD_eleChargeConsistent_      );     
 
@@ -63,7 +69,7 @@ void lldjNtuple::branchesAODElectrons(TTree* tree) {
 
 }
 
-void lldjNtuple::fillAODElectrons(const edm::Event &e, const edm::EventSetup &es) {
+void lldjNtuple::fillAODElectrons(const edm::Event &e, const edm::EventSetup &es, reco::Vertex vtx) {
     
  // cleanup from previous execution
  nAODEle_                     = 0;
@@ -72,6 +78,9 @@ void lldjNtuple::fillAODElectrons(const edm::Event &e, const edm::EventSetup &es
  AOD_eleEn_                    .clear();     
  AOD_eleEta_                   .clear();     
  AOD_elePhi_                   .clear();     
+
+ AOD_eled0_                   .clear();     
+ AOD_eledz_                   .clear();     
 
  AOD_eleCharge_                .clear();     
  AOD_eleChargeConsistent_      .clear();     
@@ -120,12 +129,20 @@ void lldjNtuple::fillAODElectrons(const edm::Event &e, const edm::EventSetup &es
  for (size_t i = 0; i < electrons->size(); ++i){
    const auto el = electrons->ptrAt(i);
 
-   if( el->pt() < 20 ) continue;
+   if( el->pt() < 5 ) continue;
+   if( fabs(el->eta()) > 2.5 ) continue;
    
    AOD_eleEn_  .push_back( el->energy() );
    AOD_elePt_  .push_back( el->pt() );
    AOD_eleEta_ .push_back( el->superCluster()->eta() );
    AOD_elePhi_ .push_back( el->superCluster()->phi() );
+
+   reco::GsfTrackRef theTrack = el->gsfTrack();
+   //AOD_eled0_.push_back( theTrack->d0() );
+   AOD_eled0_.push_back( (-1) * theTrack->dxy( vtx.position() ) );
+   AOD_eledz_.push_back( theTrack->dz( vtx.position() ) );
+
+   //std::cout << "d0 " << theTrack->d0() << ", " << dz << std::endl; 
 
    AOD_eleCharge_          .push_back(el->charge());
    AOD_eleChargeConsistent_.push_back((Int_t)el->isGsfCtfScPixChargeConsistent());

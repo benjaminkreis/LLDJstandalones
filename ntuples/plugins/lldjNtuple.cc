@@ -44,7 +44,9 @@ lldjNtuple::lldjNtuple(const edm::ParameterSet& ps) :
   // global event
   rhoCentralLabel_         = consumes<double>                        (ps.getParameter<InputTag>("rhoCentralLabel"));
   puCollection_            = consumes<vector<PileupSummaryInfo> >    (ps.getParameter<InputTag>("pileupCollection"));
+  AODpuCollection_         = consumes<vector<PileupSummaryInfo> >    (ps.getParameter<InputTag>("AODpileupCollection"));
   vtxLabel_                = consumes<reco::VertexCollection>        (ps.getParameter<InputTag>("VtxLabel"));
+  //AODVertexLabel_          = consumes<reco::VertexCollection>        (ps.getParameter<InputTag>("AODVertexSrc"));
   AODVertexLabel_          = consumes<edm::View<reco::Vertex> >      (ps.getParameter<InputTag>("AODVertexSrc"));
   trgResultsLabel_         = consumes<edm::TriggerResults>           (ps.getParameter<InputTag>("triggerResults"));
   trgResultsProcess_       =                                          ps.getParameter<InputTag>("triggerResults").process();
@@ -54,9 +56,11 @@ lldjNtuple::lldjNtuple(const edm::ParameterSet& ps) :
 
   // jets
   jetsAK4Label_            = consumes<View<pat::Jet> >               (ps.getParameter<InputTag>("ak4JetSrc"));
+  //AODjetsAK4Label_         = consumes<View<pat::Jet> >               (ps.getParameter<InputTag>("ak4JetSrc"));
   AODak4CaloJetsLabel_     = consumes<View<reco::CaloJet> >          (ps.getParameter<InputTag>("AODak4CaloJetsSrc"));  
   AODak4PFJetsLabel_       = consumes<View<reco::PFJet>   >          (ps.getParameter<InputTag>("AODak4PFJetsSrc"));    
   AODak4PFJetsCHSLabel_    = consumes<View<reco::PFJet>   >          (ps.getParameter<InputTag>("AODak4PFJetsCHSSrc")); 
+  selectedPatJetsLabel_    = consumes<edm::View<pat::Jet> >          (ps.getParameter<InputTag>("selectedPatJetsSrc"));
   AODTrackLabel_           = consumes<edm::View<reco::Track> >       (ps.getParameter<InputTag>("AODTrackSrc"));
 
   // met
@@ -64,6 +68,9 @@ lldjNtuple::lldjNtuple(const edm::ParameterSet& ps) :
   BadChCandFilterToken_    = consumes<bool>                          (ps.getParameter<InputTag>("BadChargedCandidateFilter"));
   BadPFMuonFilterToken_    = consumes<bool>                          (ps.getParameter<edm::InputTag>("BadPFMuonFilter"));
   pfMETlabel_              = consumes<View<pat::MET> >               (ps.getParameter<InputTag>("pfMETLabel"));
+  AODCaloMETlabel_         = consumes<edm::View<reco::CaloMET> >     (ps.getParameter<InputTag>("AODCaloMETlabel"));
+  AODpfChMETlabel_         = consumes<edm::View<reco::PFMET> >       (ps.getParameter<InputTag>("AODpfChMETlabel"));
+  AODpfMETlabel_           = consumes<edm::View<reco::PFMET> >       (ps.getParameter<InputTag>("AODpfMETlabel"));
 
   // muons
   muonCollection_          = consumes<View<pat::Muon> >              (ps.getParameter<InputTag>("muonSrc"));
@@ -113,14 +120,12 @@ lldjNtuple::lldjNtuple(const edm::ParameterSet& ps) :
   AODTriggerEventLabel_           =                                                     ps.getParameter<InputTag>("AODTriggerEventInputTag");
   AODTriggerEventToken_           = consumes<trigger::TriggerEvent>(AODTriggerEventLabel_);
 
-
-
   // gen
   genParticlesCollection_    = consumes<vector<reco::GenParticle> >    (ps.getParameter<InputTag>("genParticleSrc"));
-  
 
   Service<TFileService> fs;
   tree_    = fs->make<TTree>("EventTree", "Event data");
+  hTTSF_   = fs->make<TH1F>("hTTSF",      "TTbar scalefactors",   200,  0,   2);
   hEvents_ = fs->make<TH1F>("hEvents",    "total processed events",   1,  0,   2);
 
  if(doMiniAOD_){
@@ -142,6 +147,7 @@ lldjNtuple::lldjNtuple(const edm::ParameterSet& ps) :
   branchesAODMuons(tree_);
   branchesAODPhotons(tree_);
   branchesAODElectrons(tree_);
+  branchesAODMET(tree_);
  }
 
 }
@@ -200,7 +206,6 @@ void lldjNtuple::analyze(const edm::Event& e, const edm::EventSetup& es) {
   fillAODTrigger(e, es);
   fillAODJets(e, es);
   fillAODPhotons(e, es);
-  fillAODElectrons(e, es);
 
   //Vertex for Muon 
   edm::Handle<edm::View<reco::Vertex> > vtxHandle;
@@ -212,7 +217,9 @@ void lldjNtuple::analyze(const edm::Event& e, const edm::EventSetup& es) {
       break;
     }   
   }
-  fillAODMuons(e, vtx); //muons use vtx for isolation
+  fillAODElectrons(e, es, vtx);
+  fillAODMuons(e, vtx); 
+  fillAODMET(e, es);
 
  }
 

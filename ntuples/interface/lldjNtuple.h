@@ -69,6 +69,7 @@ class lldjNtuple : public edm::EDAnalyzer {
   
   void branchesGlobalEvent (TTree*);
   void branchesMET         (TTree*);
+  void branchesAODMET      (TTree*);
   void branchesPhotons     (TTree*);
   void branchesAODPhotons  (TTree*);
   void branchesElectrons   (TTree*);
@@ -84,10 +85,11 @@ class lldjNtuple : public edm::EDAnalyzer {
 
   void fillGlobalEvent (const edm::Event&, const edm::EventSetup&);
   void fillMET         (const edm::Event&, const edm::EventSetup&);
+  void fillAODMET      (const edm::Event&, const edm::EventSetup&);
   void fillPhotons     (const edm::Event&, const edm::EventSetup&);
   void fillAODPhotons  (const edm::Event&, const edm::EventSetup&);
   void fillElectrons   (const edm::Event&, const edm::EventSetup&);
-  void fillAODElectrons(const edm::Event&, const edm::EventSetup&);
+  void fillAODElectrons(const edm::Event&, const edm::EventSetup&, const reco::Vertex);
   void fillMuons       (const edm::Event&, const reco::Vertex);
   void fillAODMuons    (const edm::Event&, const reco::Vertex);
   void fillJets        (const edm::Event&, const edm::EventSetup&);
@@ -129,6 +131,7 @@ class lldjNtuple : public edm::EDAnalyzer {
   // global event
   edm::EDGetTokenT<double>                         rhoCentralLabel_;
   edm::EDGetTokenT<vector<PileupSummaryInfo> >     puCollection_;
+  edm::EDGetTokenT<vector<PileupSummaryInfo> >     AODpuCollection_;
   edm::EDGetTokenT<reco::VertexCollection>         vtxLabel_;
   edm::EDGetTokenT<edm::TriggerResults>            trgResultsLabel_;
   string                                           trgResultsProcess_;
@@ -138,11 +141,13 @@ class lldjNtuple : public edm::EDAnalyzer {
 
   // jets
   edm::EDGetTokenT<edm::View<pat::Jet> >           jetsAK4Label_;
+  edm::EDGetTokenT<edm::View<pat::Jet> >           selectedPatJetsLabel_;
    // AOD Jets
   edm::EDGetTokenT<edm::View<reco::CaloJet> >      AODak4CaloJetsLabel_;   
   edm::EDGetTokenT<edm::View<reco::PFJet>   >      AODak4PFJetsLabel_;     
   edm::EDGetTokenT<edm::View<reco::PFJet>   >      AODak4PFJetsCHSLabel_;  
 
+  //edm::EDGetTokenT<reco::VertexCollection>      AODVertexLabel_;
   edm::EDGetTokenT<edm::View<reco::Vertex>  >      AODVertexLabel_;
   edm::EDGetTokenT<edm::View<reco::Track>  >       AODTrackLabel_;
   const MagneticField*                             magneticField_;
@@ -175,6 +180,9 @@ class lldjNtuple : public edm::EDAnalyzer {
   edm::EDGetTokenT<bool> BadChCandFilterToken_;
   edm::EDGetTokenT<bool> BadPFMuonFilterToken_;
   edm::EDGetTokenT<edm::View<pat::MET> >           pfMETlabel_;
+  edm::EDGetTokenT<edm::View<reco::CaloMET> >      AODCaloMETlabel_;
+  edm::EDGetTokenT<edm::View<reco::PFMET> >        AODpfChMETlabel_;
+  edm::EDGetTokenT<edm::View<reco::PFMET> >        AODpfMETlabel_;
 
   // muons
   edm::EDGetTokenT<edm::View<pat::Muon> >          muonCollection_;
@@ -244,6 +252,7 @@ class lldjNtuple : public edm::EDAnalyzer {
 
   TTree   *tree_;
   TH1F    *hEvents_;
+  TH1F    *hTTSF_;
 
   JME::JetResolution            slimmedJetResolution_;
   JME::JetResolutionScaleFactor slimmedJetResolutionSF_;

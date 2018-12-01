@@ -7,19 +7,24 @@ import FWCore.ParameterSet.Config as cms
 process = cms.Process('LLDJ')
 process.options = cms.untracked.PSet( allowUnscheduled = cms.untracked.bool(True) )
 
+#Setup FWK for multithreaded
+process.options.numberOfThreads=cms.untracked.uint32(4)
+process.options.numberOfStreams=cms.untracked.uint32(0)
+
 process.load("RecoTracker.TkNavigation.NavigationSchoolESProducer_cfi")
 
 # log output
 process.load('FWCore.MessageLogger.MessageLogger_cfi')
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )  ## number of events -1 does all
-process.MessageLogger.cerr.FwkReport.reportEvery = 1000
+process.MessageLogger.cerr.FwkReport.reportEvery = 100
+#process.MessageLogger.cerr.FwkReport.reportEvery = 1
 #process.Tracer = cms.Service('Tracer')
 
 # input files
 process.source = cms.Source('PoolSource',
                             fileNames = cms.untracked.vstring(
-          'file:data.root'
-#         '/store/data/Run2016B/SingleElectron/AOD/23Sep2016-v3/00000/001009D1-DE99-E611-9DDB-90B11C1DBFB4.root'
+          #'file:MuEG.root'
+        'root://cms-xrd-global.cern.ch//store/data/Run2016G/SingleElectron/AOD/23Sep2016-v1/100000/62B0D6B4-D58A-E611-9F51-002590AC4B5C.root'
  ),
 )
 
@@ -102,6 +107,7 @@ process.lldjNtuple = cms.EDAnalyzer('lldjNtuple',
 
  rhoCentralLabel           = cms.InputTag('fixedGridRhoFastjetCentralNeutral'),
  pileupCollection          = cms.InputTag('slimmedAddPileupInfo'),
+ AODpileupCollection       = cms.InputTag('addPileupInfo', '', 'HLT'),
  VtxLabel                  = cms.InputTag('offlineSlimmedPrimaryVertices'),
  triggerResults            = cms.InputTag('TriggerResults', '', 'HLT'),
 
@@ -114,6 +120,7 @@ process.lldjNtuple = cms.EDAnalyzer('lldjNtuple',
  AODak4CaloJetsSrc         = cms.InputTag('ak4CaloJets' , '', 'RECO'),
  AODak4PFJetsSrc           = cms.InputTag('ak4PFJets'   , '', 'RECO'),
  AODak4PFJetsCHSSrc        = cms.InputTag('ak4PFJetsCHS', '', 'RECO'),
+ selectedPatJetsSrc        = cms.InputTag('selectedPatJets'),                                   
  AODVertexSrc              = cms.InputTag('offlinePrimaryVertices', '', 'RECO'),
  AODTrackSrc               = cms.InputTag('generalTracks', '', 'RECO'),
  vertexFitterConfig = cms.PSet(
@@ -127,11 +134,21 @@ process.lldjNtuple = cms.EDAnalyzer('lldjNtuple',
  BadChargedCandidateFilter = cms.InputTag('BadChargedCandidateFilter'),
  BadPFMuonFilter           = cms.InputTag('BadPFMuonFilter'),
  pfMETLabel                = cms.InputTag('slimmedMETsMuEGClean', '', 'LLDJ'),
+ AODCaloMETlabel           = cms.InputTag('caloMet','','RECO'),    
+ AODpfChMETlabel           = cms.InputTag('pfChMet','','RECO'),    
+ AODpfMETlabel             = cms.InputTag('pfMet','','RECO'),  
 
  muonSrc                   = cms.InputTag('slimmedMuons'),
  muonAODSrc                = cms.InputTag('selectedPatMuons'),
 
  photonSrc                 = cms.InputTag('selectedPhotons','','LLDJ'),
+ phoLooseIdMap             = cms.InputTag('egmPhotonIDs:cutBasedPhotonID-Spring15-25ns-V1-standalone-loose'),
+ phoMediumIdMap            = cms.InputTag('egmPhotonIDs:cutBasedPhotonID-Spring15-25ns-V1-standalone-medium'),
+ phoTightIdMap             = cms.InputTag('egmPhotonIDs:cutBasedPhotonID-Spring15-25ns-V1-standalone-tight'),
+ phoChargedIsolation       = cms.InputTag('photonIDValueMapProducer:phoChargedIsolation'),
+ phoNeutralHadronIsolation = cms.InputTag('photonIDValueMapProducer:phoNeutralHadronIsolation'),
+ phoPhotonIsolation        = cms.InputTag('photonIDValueMapProducer:phoPhotonIsolation'),
+ phoWorstChargedIsolation  = cms.InputTag('photonIDValueMapProducer:phoWorstChargedIsolation'),
  #photonAODSrc              = cms.InputTag('selectedPatPhotons'),
  photonAODSrc              = cms.InputTag('gedPhotons'),
 
@@ -142,14 +159,6 @@ process.lldjNtuple = cms.EDAnalyzer('lldjNtuple',
  AOD_phoNeutralHadronIsolationMap = cms.InputTag("photonIDValueMapProducer", "phoNeutralHadronIsolation"),
  AOD_phoPhotonIsolationMap        = cms.InputTag("photonIDValueMapProducer", "phoPhotonIsolation"),
  AOD_phoWorstChargedIsolationMap  = cms.InputTag("photonIDValueMapProducer", "phoWorstChargedIsolation"),
-
- phoLooseIdMap             = cms.InputTag('egmPhotonIDs:cutBasedPhotonID-Spring15-25ns-V1-standalone-loose'),
- phoMediumIdMap            = cms.InputTag('egmPhotonIDs:cutBasedPhotonID-Spring15-25ns-V1-standalone-medium'),
- phoTightIdMap             = cms.InputTag('egmPhotonIDs:cutBasedPhotonID-Spring15-25ns-V1-standalone-tight'),
- phoChargedIsolation       = cms.InputTag('photonIDValueMapProducer:phoChargedIsolation'),
- phoNeutralHadronIsolation = cms.InputTag('photonIDValueMapProducer:phoNeutralHadronIsolation'),
- phoPhotonIsolation        = cms.InputTag('photonIDValueMapProducer:phoPhotonIsolation'),
- phoWorstChargedIsolation  = cms.InputTag('photonIDValueMapProducer:phoWorstChargedIsolation'),
 
  electronAODSrc = cms.InputTag("gedGsfElectrons"),
  #AOD_eleIdMap = cms.InputTag("egmGsfElectronIDs:cutBasedElectronHLTPreselection-Summer16-V1"),#doesn't work with AOD

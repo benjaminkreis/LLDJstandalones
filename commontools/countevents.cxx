@@ -26,8 +26,11 @@ double countevents(TString Tsample){
  std::string inputline = ""; 
  TString Tinputline = ""; 
 
+ int count = 0;
  while( std::getline(inputfile, inputline) ) { 
   if( inputfile.fail() ) continue;
+
+  count++;
 
   Tinputline = inputline;
   if( Tinputline.Contains("/store/group") ){  // if filename
@@ -44,7 +47,7 @@ double countevents(TString Tsample){
    // add bin contents to total count
    nevents=h_nevents->GetBinContent(1);
    ntotal+=nevents;
-   printf("file: /hdfs%s \n events: %.1f \n",Tinputline.Data(),nevents);
+   if(count%100 == 0) printf("Print every 100 files: root://cmseos.fnal.gov/%s \n events: %.1f \n",Tinputline.Data(),nevents);
 
    theFile->Close();
 
